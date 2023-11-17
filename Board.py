@@ -5,7 +5,7 @@ class Board():
     def __init__(self, board_size):
         self.board_size = board_size
         self.board = np.zeros((self.board_size, self.board_size)).astype(np.uint16)
-        self.free_positions:list[tuple] = self.check_free_positions_()
+        self.free_positions:list[tuple] = self._check_free_positions()
         self.last_move:int = None
         self.is_game_over = False
         self.reached_2048 = False
@@ -13,10 +13,10 @@ class Board():
         self.last_received_points = 0
     
     def start(self):
-        self.generate_new_block_()
+        self._generate_new_block()
 
     def handle_move(self, move):
-        def handle_horizontal_move_(row, p1, p2, add_or_sub, direction):
+        def _handle_horizontal_move(row, p1, p2, add_or_sub, direction):
             point1_val =0
             something_moved =False
             was_merged=False
@@ -61,7 +61,7 @@ class Board():
             for row in self.board:
               p1 = len(row)
               p2 =len(row)-1
-              something_moved = handle_horizontal_move_(row, p1, p2, (-1), move)
+              something_moved = _handle_horizontal_move(row, p1, p2, (-1), move)
               if should_generate is False and something_moved is True:
                   should_generate = True
                 
@@ -69,7 +69,7 @@ class Board():
             for row in self.board:
                 p1 = -1
                 p2 = 0
-                something_moved = handle_horizontal_move_(row, p1, p2, 1, move)
+                something_moved = _handle_horizontal_move(row, p1, p2, 1, move)
                 if should_generate is False and something_moved is True:
                   should_generate = True
 
@@ -79,7 +79,7 @@ class Board():
             for row in temp_board:
                 p1 = -1
                 p2 = 0
-                something_moved = handle_horizontal_move_(row, p1, p2, 1, move)
+                something_moved = _handle_horizontal_move(row, p1, p2, 1, move)
                 if should_generate is False and something_moved is True:
                   should_generate = True
             #tanspose it back
@@ -91,19 +91,19 @@ class Board():
             for row in temp_board:
                 p1 = len(row)
                 p2 =len(row)-1
-                something_moved = handle_horizontal_move_(row, p1, p2, (-1), move)
+                something_moved = _handle_horizontal_move(row, p1, p2, (-1), move)
                 if should_generate is False and something_moved is True:
                   should_generate = True
             #tanspose it back
             self.board = np.transpose(temp_board)
         
 
-        self.free_positions = self.check_free_positions_()
+        self.free_positions = self._check_free_positions()
         if should_generate and self.free_positions is not None:
-                self.generate_new_block_()
+                self._generate_new_block()
             
 
-    def check_free_positions_(self):
+    def _check_free_positions(self):
 
         def check_if_has_possible_moves_():
             for row_idx in range(self.board_size):
@@ -123,7 +123,7 @@ class Board():
     
         return free_pos
 
-    def generate_new_block_(self):
+    def _generate_new_block(self):
         row, column = random.choice(self.free_positions)
         prob = random.random()
         picked_number = 2 if prob < 0.9 else 4
