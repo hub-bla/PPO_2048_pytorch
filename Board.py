@@ -9,6 +9,7 @@ class Board():
         self.last_move:int = None
         self.is_game_over = False
         self.reached_2048 = False
+        self.points = 0
     def start(self):
         self.generate_new_block_()
 
@@ -16,6 +17,18 @@ class Board():
         def handle_horizontal_move_(row, p1, p2, add_or_sub, direction):
             point1_val =0
             something_moved =False
+            was_merged=False
+            # BUG: 
+            # [0, 2, 2, 4]
+            # [4, 4, 0, 2]
+            # [8, 2, 0, 0]
+            # [8, 0, 2, 0]
+
+            # [8, 0, 0, 0]
+            # [8, 2, 0, 0]
+            # [8, 2, 0, 0]
+            # [8, 2, 2, 0]
+
             while True:
                 if direction=="LEFT" or "UP":
                     if p2 >= len(row):
@@ -23,7 +36,7 @@ class Board():
                 if direction =="RIGHT" or "DOWN":
                         if 0>p2:
                             break
-                if point1_val != row[p2] and row[p2] != 0:
+                if (was_merged or point1_val != row[p2]) and row[p2] != 0:
                       p1 +=add_or_sub
                       if p1!= p2:
                           something_moved = True
@@ -31,14 +44,18 @@ class Board():
                       row[p2] = row[p1]
                       row[p1] = temp
                       point1_val = row[p1]
+                      was_merged = False
                       
                 elif point1_val == row[p2] and row[p2] != 0:
                     row[p1] *=2
                     point1_val = row[p1]
+                    self.points += point1_val
                     if point1_val == 2048:
                         self.reached_2048 =True
                     row[p2] =0
                     something_moved = True
+                    #if something merged then we won't be adding here more
+                    was_merged = True
                 p2 +=add_or_sub  
             
             return something_moved
@@ -127,7 +144,18 @@ class Board():
 if __name__ == '__main__':
     board = Board(4)
     board.start()
-
+    board.board = [
+        [0, 2, 2, 4],
+        [4, 4, 0, 2],
+        [8, 2, 0, 0],
+        [8, 0, 2, 0],
+    ]
+    for row in board.board:
+            print(row)
+    print()
+    board.handle_move("LEFT")
+    for row in board.board:
+            print(row)
     while board.is_game_over is False and board.reached_2048 is False:
         for row in board.board:
             print(row)
@@ -144,3 +172,4 @@ if __name__ == '__main__':
         elif key == b'E':
             break
 
+    print("Reached points", board.points)
