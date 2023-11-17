@@ -9,7 +9,9 @@ class Board():
         self.last_move:int = None
         self.is_game_over = False
         self.reached_2048 = False
-        self.points = 0
+        self.overall_points = 0
+        self.last_received_points = 0
+    
     def start(self):
         self.generate_new_block_()
 
@@ -18,17 +20,8 @@ class Board():
             point1_val =0
             something_moved =False
             was_merged=False
-            # BUG: 
-            # [0, 2, 2, 4]
-            # [4, 4, 0, 2]
-            # [8, 2, 0, 0]
-            # [8, 0, 2, 0]
-
-            # [8, 0, 0, 0]
-            # [8, 2, 0, 0]
-            # [8, 2, 0, 0]
-            # [8, 2, 2, 0]
-
+            self.last_received_points = 0
+ 
             while True:
                 if direction=="LEFT" or "UP":
                     if p2 >= len(row):
@@ -49,7 +42,8 @@ class Board():
                 elif point1_val == row[p2] and row[p2] != 0:
                     row[p1] *=2
                     point1_val = row[p1]
-                    self.points += point1_val
+                    self.last_received_points= point1_val
+                    self.overall_points += point1_val
                     if point1_val == 2048:
                         self.reached_2048 =True
                     row[p2] =0
@@ -102,29 +96,31 @@ class Board():
                   should_generate = True
             #tanspose it back
             self.board = np.transpose(temp_board)
+        
+
         self.free_positions = self.check_free_positions_()
-        if should_generate:
-            if self.free_positions is not None:
+        if should_generate and self.free_positions is not None:
                 self.generate_new_block_()
             
 
     def check_free_positions_(self):
+
         def check_if_has_possible_moves_():
-            print("hi")
             for row_idx in range(self.board_size):
                 for col_idx in range(self.board_size-1):
                     if self.board[row_idx][col_idx] == self.board[row_idx][col_idx+1]:
                         return True
                     elif row_idx != 0 and self.board[row_idx-1][col_idx] == self.board[row_idx][col_idx]:
                         return True
-            
             return False
+
         free_pos =  [(i,j)  for j in range(self.board_size) for i in range(self.board_size) if self.board[i][j]==0]
        
         if len(free_pos) ==0:
             if check_if_has_possible_moves_() is False:
                 self.is_game_over = True
                 return None
+    
         return free_pos
 
     def generate_new_block_(self):
@@ -136,7 +132,8 @@ class Board():
 
 
 
-
+    def specification(self):
+        return self.board, self.last_received_points, (self.is_game_over or self.reached_2048)
 
 
 
@@ -144,18 +141,7 @@ class Board():
 if __name__ == '__main__':
     board = Board(4)
     board.start()
-    board.board = [
-        [0, 2, 2, 4],
-        [4, 4, 0, 2],
-        [8, 2, 0, 0],
-        [8, 0, 2, 0],
-    ]
-    for row in board.board:
-            print(row)
-    print()
-    board.handle_move("LEFT")
-    for row in board.board:
-            print(row)
+  
     while board.is_game_over is False and board.reached_2048 is False:
         for row in board.board:
             print(row)
@@ -172,4 +158,4 @@ if __name__ == '__main__':
         elif key == b'E':
             break
 
-    print("Reached points", board.points)
+    print("Reached points", board.overall_points)
