@@ -8,6 +8,7 @@ class Board():
         self.free_positions:list[tuple] = self.check_free_positions_()
         self.last_move:int = None
         self.is_game_over = False
+        self.reached_2048 = False
     def start(self):
         self.generate_new_block_()
 
@@ -34,6 +35,8 @@ class Board():
                 elif point1_val == row[p2] and row[p2] != 0:
                     row[p1] *=2
                     point1_val = row[p1]
+                    if point1_val == 2048:
+                        self.reached_2048 =True
                     row[p2] =0
                     something_moved = True
                 p2 +=add_or_sub  
@@ -89,9 +92,6 @@ class Board():
             
 
     def check_free_positions_(self):
-        # TODO: Condition to check if there is possible move when there's no free positions
-        # so ith should check every row to find at least 1 pair of the same val next to each other
-        # for up and down move just transpose matrix and look for that
         def check_if_has_possible_moves_():
             print("hi")
             for row_idx in range(self.board_size):
@@ -127,19 +127,8 @@ class Board():
 if __name__ == '__main__':
     board = Board(4)
     board.start()
-#     board.board = [[16,  4,  8,  4],
-# [ 4,  8, 64,  2],
-# [  2,  32, 128,  16],
-# [4, 2, 4, 2]]
-    # for i, k in enumerate([0, 2, 2, 8]):
-    #     board.board[0,i] = k
-    # for row in board.board:
-    #         print(row)
-    # print()
-    # board.handle_move("LEFT")
-    # for row in board.board:
-    #         print(row)
-    while board.is_game_over is False:
+
+    while board.is_game_over is False and board.reached_2048 is False:
         for row in board.board:
             print(row)
         print()
