@@ -7,6 +7,8 @@ class Board():
         self.board = np.zeros((self.board_size, self.board_size)).astype(np.uint16)
         self.free_positions:list[tuple] = self.check_free_positions_()
         self.last_move:int = None
+        self.is_game_over = False
+    def start(self):
         self.generate_new_block_()
 
     def handle_move(self, move):
@@ -80,17 +82,35 @@ class Board():
                   should_generate = True
             #tanspose it back
             self.board = np.transpose(temp_board)
-
+        self.free_positions = self.check_free_positions_()
         if should_generate:
-            self.free_positions = self.check_free_positions_()
-            self.generate_new_block_()
+            if self.free_positions is not None:
+                self.generate_new_block_()
             
 
     def check_free_positions_(self):
-        return [(i,j)  for j in range(self.board_size) for i in range(self.board_size) if self.board[i][j]==0]
+        # TODO: Condition to check if there is possible move when there's no free positions
+        # so ith should check every row to find at least 1 pair of the same val next to each other
+        # for up and down move just transpose matrix and look for that
+        def check_if_has_possible_moves_():
+            print("hi")
+            for row_idx in range(self.board_size):
+                for col_idx in range(self.board_size-1):
+                    if self.board[row_idx][col_idx] == self.board[row_idx][col_idx+1]:
+                        return True
+                    elif row_idx != 0 and self.board[row_idx-1][col_idx] == self.board[row_idx][col_idx]:
+                        return True
+            
+            return False
+        free_pos =  [(i,j)  for j in range(self.board_size) for i in range(self.board_size) if self.board[i][j]==0]
+       
+        if len(free_pos) ==0:
+            if check_if_has_possible_moves_() is False:
+                self.is_game_over = True
+                return None
+        return free_pos
 
     def generate_new_block_(self):
-        print(self.free_positions)
         row, column = random.choice(self.free_positions)
         prob = random.random()
         picked_number = 2 if prob < 0.9 else 4
@@ -106,7 +126,11 @@ class Board():
 
 if __name__ == '__main__':
     board = Board(4)
-    
+    board.start()
+#     board.board = [[16,  4,  8,  4],
+# [ 4,  8, 64,  2],
+# [  2,  32, 128,  16],
+# [4, 2, 4, 2]]
     # for i, k in enumerate([0, 2, 2, 8]):
     #     board.board[0,i] = k
     # for row in board.board:
@@ -115,7 +139,7 @@ if __name__ == '__main__':
     # board.handle_move("LEFT")
     # for row in board.board:
     #         print(row)
-    while True:
+    while board.is_game_over is False:
         for row in board.board:
             print(row)
         print()
