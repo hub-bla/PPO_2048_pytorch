@@ -6,18 +6,33 @@ class Game():
         self.board_size = board_size
         self.board = Board(self.board_size)
         self.action_space = ["RIGHT","LEFT", "UP", "DOWN"]
-
     def reset(self):
         self.board = Board(self.board_size)
         self.board.start()
 
-        return self.board
-    
+        return self.get_board()
 
-    def step(self, action):
-        self.board.handle_move(action)
+    def get_board(self):
+        return self.board.board    
 
-        return self.board.specification
+    def step(self, action:int):
+        if self.board.is_game_over or self.board.reached_2048:
+            self.reset()
+
+        self.board.handle_move(self.action_space[action])
+        reward = self.board.last_received_points
+
+        # if (self.board.episode_length<1 and self.board.episodes_with_points< 1):
+        #     reward = reward* (self.episodes_with_points/self.board.episode_length)
+        if (self.board.reached_2048):
+            reward=100
+        if(self.board.is_game_over):
+            reward =-1
+        # elif(self.board.episode_length)< 200:
+        #     reward = self.board.last_received_points/2
+
+        
+        return self.get_board(), reward, (self.board.is_game_over or self.board.reached_2048)
 
 
     def play_with_pygame(self, window_size):
@@ -57,7 +72,7 @@ class Game():
 
                 for x in range(start_of_grid[1], end_of_grid[1], blockSize):
                     rect = pygame.Rect(x, y, blockSize, blockSize)
-                    str_num = str(self.board.board[i][j])
+                    str_num = str(int(self.board.board[i][j]*2048))
                     len_num = len(str_num)
                     
                     
