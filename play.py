@@ -3,29 +3,26 @@ from model import PpoAgent
 from game import Game
 import numpy as np
 import time
-env = Game(4)
+from utils import one_hot_encode
 
-agent = PpoAgent(env.board_size, len(env.action_space))
 
-torch.load
-checkpoint = torch.load("./model.pt")
-agent.load_state_dict(checkpoint)
-env.reset()
-moves= 0 
-agent.eval()
-while (env.board.is_game_over or env.board.reached_2048) is False:
-    for row in env.get_board():
-        print(row*2048)
-    print()
-    # time.sleep(1)
+def evaluate_agent(agent):
+    moves = 0 
+    env1 = Game(4)
+    env1.reset()
 
-    t_board = torch.tensor(env.get_board().astype(np.float32)).flatten()
-    obs = torch.zeros((1, env.board_size*env.board_size))
-    obs[0] = t_board
-    print("T_BOARD",t_board)
-    action,_,_,_ = agent.get_action_and_value(obs)
-    print("ACTION",action)
-    move  = action.item()
-    env.step(move)
-    moves+=1
-print("moves", moves)
+    while (env1.board.is_game_over or env1.board.reached_2048) is False:
+
+        state = one_hot_encode(env1.get_board(), env1.board_size)
+        t_board = torch.zeros((1, state.shape[0], state.shape[1], state.shape[2]))
+        t_board[0]=state
+  
+        action,_,_,_ = agent.get_action_and_value(t_board)
+        move  = action.item()
+        env1.step(move)
+        moves+=1
+        
+    print("BOARD MAX", np.max(env1.get_board()))
+    print("POINTS", env1.board.overall_points)
+    print("MOVES", moves)
+    return env1.board.overall_points, moves

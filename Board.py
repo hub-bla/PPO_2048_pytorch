@@ -1,6 +1,5 @@
 import random
 import numpy as np
-import msvcrt
 class Board():
     def __init__(self, board_size):
         self.board_size = board_size
@@ -13,11 +12,14 @@ class Board():
         self.last_received_points = 0
         self.episode_length = 0
         self.episodes_with_points = 0
+
+
     def start(self):
         self._generate_new_block()
 
+
     def handle_move(self, move):
-        self.last_received_points = 0.0001
+        self.last_received_points = -0.5
         def _handle_horizontal_move(row, p1, p2, add_or_sub, direction):
             point1_val =0
             something_moved =False
@@ -32,8 +34,10 @@ class Board():
                 if (was_merged or point1_val != row[p2]) and row[p2] != 0:
                       p1 +=add_or_sub
                       if p1!= p2:
-                          self.last_received_points = 0
+                          
                           something_moved = True
+                      if self.last_received_points <0:
+                        self.last_received_points = -0.5
                       temp = row[p2]
                       row[p2] = row[p1]
                       row[p1] = temp
@@ -44,20 +48,21 @@ class Board():
                     row[p1] *=2
                     point1_val = row[p1]
                     if self.last_received_points <0:
-                        self.last_received_points =0
-                    self.last_received_points+=point1_val
+                        self.last_received_points = -0.5
+                    #normalize values
+                    self.last_received_points+=point1_val/2048
                     self.episodes_with_points+=1
                     self.overall_points += point1_val
-                    if point1_val == 1:
-                        self.reached_2048 =True
-                    row[p2] =0
                     something_moved = True
-                    #if something merged then we won't be adding here more
                     was_merged = True
+                    if point1_val == 2048:
+                        self.reached_2048 =True
+                        self.last_received_points = 1
+                    row[p2] =0
+                   
                 p2 +=add_or_sub  
             
             return something_moved
-        
 
 
         should_generate = False
@@ -86,7 +91,7 @@ class Board():
                 something_moved = _handle_horizontal_move(row, p1, p2, 1, move)
                 if should_generate is False and something_moved is True:
                   should_generate = True
-            #tanspose it back
+            #transpose it back
             self.board = np.transpose(temp_board)
 
         elif move == "DOWN":
@@ -98,7 +103,7 @@ class Board():
                 something_moved = _handle_horizontal_move(row, p1, p2, (-1), move)
                 if should_generate is False and something_moved is True:
                   should_generate = True
-            #tanspose it back
+            #transpose it back
             self.board = np.transpose(temp_board)
 
        
@@ -107,8 +112,7 @@ class Board():
         self.episode_length +=1
         if should_generate and self.free_positions is not None:
                 self._generate_new_block()
-        else:
-             self.last_received_points =0
+        
             
 
     def _check_free_positions(self):
@@ -136,34 +140,7 @@ class Board():
     def _generate_new_block(self):
         row, column = random.choice(self.free_positions)
         prob = random.random()
-        picked_number = 2/2048 if prob < 0.9 else 4/2048
+        picked_number = 2 if prob < 0.9 else 4
         self.board[row][column] = picked_number
         self.free_positions.remove((row,column))
 
-
-
-
-
-
-
-if __name__ == '__main__':
-    board = Board(4)
-    board.start()
-  
-    while board.is_game_over is False and board.reached_2048 is False:
-        for row in board.board:
-            print(row)
-        print()
-        key = msvcrt.getch()
-        if key == b'w':
-            board.handle_move("UP")
-        elif key == b's':
-            board.handle_move("DOWN")
-        elif key == b'a':
-            board.handle_move("LEFT")
-        elif key == b'd':
-            board.handle_move("RIGHT")
-        elif key == b'E':
-            break
-
-    print("Reached points", board.overall_points)
