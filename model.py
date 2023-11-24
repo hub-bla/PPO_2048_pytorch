@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.distributions.categorical import Categorical
 
+
 class Critic(nn.Module):
     def __init__(self):
         super().__init__()
@@ -9,6 +10,7 @@ class Critic(nn.Module):
         self.conv2 = nn.Conv2d(512, 2048, kernel_size=3)
         self.linear1 = nn.Linear(2048*int(2048/512), 64)
         self.linear2 = nn.Linear(64, 1)
+
     def forward(self, x):
         x = self.conv1(x)
         x = torch.nn.functional.relu(x)
@@ -23,8 +25,6 @@ class Critic(nn.Module):
         return x
 
 
-
-
 class Actor(nn.Module):
     def __init__(self):
         super().__init__()
@@ -32,6 +32,7 @@ class Actor(nn.Module):
         self.conv2 = nn.Conv2d(512, 2048, kernel_size=3)
         self.linear1 = nn.Linear(2048*int(2048/512), 64)
         self.linear2 = nn.Linear(64, 4)
+
     def forward(self, x):
         x = self.conv1(x)
         x = torch.nn.functional.relu(x)
@@ -46,14 +47,12 @@ class Actor(nn.Module):
         return x
     
 
-
 class PpoAgent(nn.Module):
     def __init__(self):
         super().__init__()
         self.critic = Critic()
         self.actor = Actor()
 
-    
     def get_value(self, x):
         return self.critic(x)
     

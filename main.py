@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     num_updates = 25000
 
-    learning_rate=0.0005
+    learning_rate = 0.0005
     anneal_lr = True
 
     num_steps = 65536
@@ -33,15 +33,12 @@ if __name__ == "__main__":
 
     agent = PpoAgent().to(device)
     optimizer = torch.optim.Adam(agent.parameters(), lr=learning_rate, eps=1e-4)
-   
-
-
 
     start_time = time.time()
 
     encoded_ob = one_hot_encode(env.reset(), env.board_size)
-    next_obs = torch.zeros(1, encoded_ob.shape[0], encoded_ob.shape[1], encoded_ob.shape[2])
-    next_obs[0] = encoded_ob
+    next_obs = encoded_ob.unsqueeze(0)
+
     next_done = torch.tensor(0).to(device)
 
     obs = torch.zeros((num_steps, 16, 4, 4)).to(device)
@@ -54,11 +51,11 @@ if __name__ == "__main__":
     for update in range(1, num_updates + 1):
         if anneal_lr:
             frac = 1.0 - (update-1.0)/num_updates
-            lrnow = frac *learning_rate
+            lrnow = frac * learning_rate
             optimizer.param_groups[0]["lr"] = lrnow
 
         for step in range(num_steps):
-            global_step +=1 
+            global_step += 1
             obs[step] = next_obs[0]
             dones[step] = next_done
 
@@ -73,14 +70,10 @@ if __name__ == "__main__":
 
             rewards[step] = torch.tensor(reward).to(device).view(-1)
 
-
             encoded_ob = one_hot_encode(next_obs, env.board_size)
-            next_obs = torch.zeros(1, encoded_ob.shape[0], encoded_ob.shape[1], encoded_ob.shape[2]).to(device)
-            next_obs[0] = encoded_ob
+            next_obs = encoded_ob.unsqueeze(0)
 
             next_done = torch.Tensor(np.array(done).astype(float)).to(device)
-
-
 
         with torch.no_grad():
             next_value = agent.get_value(next_obs)
@@ -108,11 +101,10 @@ if __name__ == "__main__":
         b_inds = np.arange(num_steps)
         clipfracs = []
 
-        
         for epoch in range(1):
             np.random.shuffle(b_inds)
             for start in range(0, num_steps, batch_size):
-                mb_inds = b_inds[start : start+(batch_size)]
+                mb_inds = b_inds[start:start+batch_size]
                 batch = obs[mb_inds]
                 _, new_logprob, entropy, new_value = agent.get_action_and_value(batch, b_actions[mb_inds])
 
@@ -123,7 +115,7 @@ if __name__ == "__main__":
                     old_approx_kl = (-log_ratio).mean()
                     approx_kl = ((ratio-1)-log_ratio).mean()
 
-                    clipfracs += [((ratio-1.0).abs()> clip_coef).float().mean().item()]
+                    clipfracs += [((ratio-1.0).abs() > clip_coef).float().mean().item()]
 
                 mb_advantages = b_advantages[mb_inds]
                 mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
@@ -152,10 +144,9 @@ if __name__ == "__main__":
                 torch.nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
                 optimizer.step()
 
-
             y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
             var_y = np.var(y_true)
-            explained_var = np.nan if var_y ==0 else 1- np.var(y_true - y_pred)/var_y
+            explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred)/var_y
             writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
             writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
             writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
