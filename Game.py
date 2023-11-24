@@ -1,12 +1,14 @@
 import pygame
 from board import Board
 
-class Game():
+
+class Game:
     def __init__(self, board_size:int):
         self.board_size = board_size
         self.board = Board(self.board_size)
-        self.action_space = ["RIGHT","LEFT", "UP", "DOWN"]
-        self.action_space_n = [0,1,2,3]
+        self.action_space = ["RIGHT", "LEFT", "UP", "DOWN"]
+        self.action_space_n = [0, 1, 2, 3]
+        self.screen = None
 
     def reset(self):
         self.board = Board(self.board_size)
@@ -23,18 +25,17 @@ class Game():
         self.board.handle_move(self.action_space[action])
         reward = self.board.last_received_points
 
-        if (self.board.reached_2048):
+        if self.board.reached_2048:
             reward=1.0
-        if(self.board.is_game_over):
+        if self.board.is_game_over:
             reward =-1.0
         
         return self.get_board(), reward, (self.board.is_game_over or self.board.reached_2048)
 
-
     def play_with_pygame(self, window_size):
-        GAME_BACKGROUND_COLOR = (250,248,239)
-        BOARD_BACKGROUND_COLOR = (187,173,160)
-        EMPTY_POSITION_COLOR = (205,193,180)
+        GAME_BACKGROUND_COLOR = (250, 248, 239)
+        BOARD_BACKGROUND_COLOR = (187, 173, 160)
+        EMPTY_POSITION_COLOR = (205, 193, 180)
         NUM_COLORS = {
             "2": (238, 228, 218),
             "4": (237, 224, 200),
@@ -51,6 +52,7 @@ class Game():
         DARK_TEXT_COLOR = (119, 110, 101)
         LIGHT_TEXT_COLOR = (249,246,242)
         pygame.init()
+
         def draw_text(text, pos, color):
             if text == "0":
                 return
@@ -59,15 +61,15 @@ class Game():
             self.screen.blit(txt, pos)
         
         def drawGrid():
-            blockSize = 100 
+            block_size = 100
             start_of_grid = (((window_size[0]//2)-window_size[0]//4), ((window_size[1]//2)-window_size[1]//4))
             end_of_grid = ((start_of_grid[0]+(window_size[0]//2)), (start_of_grid[1]+(window_size[1]//2)))
             i = 0
-            for y in range(start_of_grid[0], end_of_grid[0], blockSize):
+            for y in range(start_of_grid[0], end_of_grid[0], block_size):
 
                 j = 0
-                for x in range(start_of_grid[1], end_of_grid[1], blockSize):
-                    rect = pygame.Rect(x, y, blockSize, blockSize)
+                for x in range(start_of_grid[1], end_of_grid[1], block_size):
+                    rect = pygame.Rect(x, y, block_size, block_size)
                     str_num = str(int(self.board.board[i][j]*2048))
                     len_num = len(str_num)
 
@@ -79,14 +81,13 @@ class Game():
                     pygame.draw.rect(self.screen, BOARD_BACKGROUND_COLOR, rect, 10)
                    
                     text_color = LIGHT_TEXT_COLOR
-                    if str_num =="2" or str_num =="4":
-                        text_color=DARK_TEXT_COLOR
+                    if str_num == "2" or str_num == "4":
+                        text_color = DARK_TEXT_COLOR
 
-                    draw_text(str_num, ((x+blockSize//2)-8*len_num, (y+blockSize//2)-12), text_color)
-                    j+=1
+                    draw_text(str_num, ((x+block_size//2)-8*len_num, (y+block_size//2)-12), text_color)
+                    j += 1
 
-                i+=1
-                
+                i += 1
 
         self.screen = pygame.display.set_mode(window_size)
         running = True
@@ -103,20 +104,13 @@ class Game():
                     
                         if event.key == pygame.K_a:
                             self.board.handle_move("LEFT")
-                            print("test")
-                        elif event.key ==  pygame.K_d:
+                        elif event.key == pygame.K_d:
                             self.board.handle_move("RIGHT")
-                            print("test")
-                        elif event.key ==  pygame.K_w:
+                        elif event.key == pygame.K_w:
                             self.board.handle_move("UP")
-                            print("test")
-
-                        elif event.key ==  pygame.K_s:
+                        elif event.key == pygame.K_s:
                             self.board.handle_move("DOWN")
-                            print("test")
-                        for row in self.board.board:
-                                print(row)
-                        print(self.board.is_game_over)
+
                         self.screen.fill(GAME_BACKGROUND_COLOR)
                         if self.board.is_game_over:
                             draw_text("Game over", (window_size[0]//2, window_size[1]//2),DARK_TEXT_COLOR)
