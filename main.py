@@ -18,7 +18,7 @@ def evaluate_agent(agent, device):
 
         state = one_hot_encode(env1.get_board(), env1.board_size)
         t_board = torch.zeros((1, state.shape[0], state.shape[1], state.shape[2])).to(device)
-        t_board[0]=state
+        t_board[0] = state
 
         action,_,_,_ = agent.get_action_and_value(t_board)
         move  = action.item()
@@ -44,7 +44,7 @@ class ReplayBuffer:
 if __name__ == "__main__":
     writer = SummaryWriter("Ppo_agent_2048")
     replay_mem = ReplayBuffer()
-    learning_rate =  1e-4
+    learning_rate = 1e-4
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     env = Game(4)  
     agent = PpoAgent().to(device)
@@ -215,7 +215,7 @@ if __name__ == "__main__":
             explained_var = np.nan if var_y ==0 else 1- np.var(y_true - y_pred)/var_y
             episode_reward, moves  = 0, 0
             if global_step > 4e5:
-                print("MAX FROM TEST: ", evaluate_agent(agent, device))
+                print("MAX FROM EVAL: ", evaluate_agent(agent, device))
             print("PG LOSS: ", pg_loss.item())
             print("VALUE LOSS:", v_loss.item())
             print("EXPL VAR: ", explained_var)
