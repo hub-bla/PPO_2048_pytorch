@@ -1,5 +1,9 @@
 import pygame
+import torch
 from board import Board
+from utils import one_hot_encode
+from model import PpoAgent
+
 
 
 class Game:
@@ -32,7 +36,7 @@ class Game:
         
         return self.get_board(), reward, (self.board.is_game_over or self.board.reached_2048)
 
-    def play_with_pygame(self, window_size):
+    def play_with_pygame(self, window_size, played_by_agent=True):
         GAME_BACKGROUND_COLOR = (250, 248, 239)
         BOARD_BACKGROUND_COLOR = (187, 173, 160)
         EMPTY_POSITION_COLOR = (205, 193, 180)
@@ -47,7 +51,9 @@ class Game:
             "256": (237, 204, 98),
             "512": (237, 200, 80),
             "1024": (237, 197, 63),
-            "2048": (237, 194, 45)
+            "2048": (237, 194, 45),
+            "4096": (237, 194, 45),
+            "8192": (237, 194, 45),
         }
         DARK_TEXT_COLOR = (119, 110, 101)
         LIGHT_TEXT_COLOR = (249,246,242)
@@ -70,7 +76,7 @@ class Game:
                 j = 0
                 for x in range(start_of_grid[1], end_of_grid[1], block_size):
                     rect = pygame.Rect(x, y, block_size, block_size)
-                    str_num = str(int(self.board.board[i][j]*2048))
+                    str_num = str(int(self.board.board[i][j]))
                     len_num = len(str_num)
 
                     if str_num != "0":
@@ -96,28 +102,53 @@ class Game:
         drawGrid()
         pygame.display.flip()
 
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        checkpoint = torch.load("./model.pt", map_location=device)
+        agent = PpoAgent().to(device)
+        agent.load_state_dict(checkpoint)
+        agent.eval()
         while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.KEYDOWN:
+            if not played_by_agent:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
                     
-                        if event.key == pygame.K_a:
-                            self.board.handle_move("LEFT")
-                        elif event.key == pygame.K_d:
-                            self.board.handle_move("RIGHT")
-                        elif event.key == pygame.K_w:
-                            self.board.handle_move("UP")
-                        elif event.key == pygame.K_s:
-                            self.board.handle_move("DOWN")
+                        if event.type == pygame.KEYDOWN:
+                            
+                                if event.key == pygame.K_a:
+                                    self.board.handle_move("LEFT")
+                                elif event.key == pygame.K_d:
+                                    self.board.handle_move("RIGHT")
+                                elif event.key == pygame.K_w:
+                                    self.board.handle_move("UP")
+                                elif event.key == pygame.K_s:
+                                    self.board.handle_move("DOWN")
+            else:
+                state = one_hot_encode(self.get_board(), self.board_size)
+                t_board = torch.zeros((1, state.shape[0], state.shape[1], state.shape[2]))
+                t_board[0] = state
+        
+                action, _, _, _ = agent.get_action_and_value(t_board)
+                move = action.item()
+                self.step(move)
+                # sleep(.05)
+                # print("move", move)
 
-                        self.screen.fill(GAME_BACKGROUND_COLOR)
-                        if self.board.is_game_over:
-                            draw_text("Game over", (window_size[0]//2, window_size[1]//2),DARK_TEXT_COLOR)
-                        elif self.board.reached_2048:
-                            draw_text("You won", (window_size[0]//2, window_size[1]//2),DARK_TEXT_COLOR)
-                        else:
-                            drawGrid()
+            self.screen.fill(GAME_BACKGROUND_COLOR)
+            if self.board.is_game_over:
+                draw_text("Game over", ((window_size[1]//2)-31*2, (window_size[1]//2)-40),DARK_TEXT_COLOR)
+                pygame.display.flip()
+                break
+            elif self.board.reached_2048:
+                draw_text("You won", (window_size[0]//2, window_size[1]//2),DARK_TEXT_COLOR)
+            else:
+                drawGrid()
+            pygame.display.flip()
 
-                        pygame.display.flip()
 
+
+
+if __name__ == '__main__':
+
+    env = Game(4)
+    env.play_with_pygame((800,800))
