@@ -4,7 +4,7 @@
 The attached image shows how the agent reaches tile 1024.</p>
 
 ### Usage
-To check how the agent plays use command below:
+To check how the agent plays use the command below:
 ```python ./game.py```
 
 To train your own agent you can run:
